@@ -7,6 +7,7 @@
  * Copyright (C) 2008-13 Christian Franke <smartmontools-support@lists.sourceforge.net>
  * Copyright (C) 1999-2000 Michael Cornwell <cornwell@acm.org>
  * Copyright (C) 2000 Andre Hedrick <andre@linux-ide.org>
+ * Copyright (C) 2013 Frederic Nadeau
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +29,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <limits.h>
 
 #include "config.h"
 #include "int64.h"
@@ -110,25 +112,27 @@ struct format_name_entry
 };
 
 const format_name_entry format_names[] = {
-  {"raw8"           , RAWFMT_RAW8},
-  {"raw16"          , RAWFMT_RAW16},
-  {"raw48"          , RAWFMT_RAW48},
-  {"hex48"          , RAWFMT_HEX48},
-  {"raw56"          , RAWFMT_RAW56},
-  {"hex56"          , RAWFMT_HEX56},
-  {"raw64"          , RAWFMT_RAW64},
-  {"hex64"          , RAWFMT_HEX64},
-  {"raw16(raw16)"   , RAWFMT_RAW16_OPT_RAW16},
-  {"raw16(avg16)"   , RAWFMT_RAW16_OPT_AVG16},
-  {"raw24(raw8)"    , RAWFMT_RAW24_OPT_RAW8},
-  {"raw24/raw24"    , RAWFMT_RAW24_DIV_RAW24},
-  {"raw24/raw32"    , RAWFMT_RAW24_DIV_RAW32},
-  {"sec2hour"       , RAWFMT_SEC2HOUR},
-  {"min2hour"       , RAWFMT_MIN2HOUR},
-  {"halfmin2hour"   , RAWFMT_HALFMIN2HOUR},
-  {"msec24hour32"   , RAWFMT_MSEC24_HOUR32},
-  {"tempminmax"     , RAWFMT_TEMPMINMAX},
-  {"temp10x"        , RAWFMT_TEMP10X},
+  {"raw8"                , RAWFMT_RAW8},
+  {"raw16"               , RAWFMT_RAW16},
+  {"raw48"               , RAWFMT_RAW48},
+  {"hex48"               , RAWFMT_HEX48},
+  {"raw56"               , RAWFMT_RAW56},
+  {"hex56"               , RAWFMT_HEX56},
+  {"raw64"               , RAWFMT_RAW64},
+  {"hex64"               , RAWFMT_HEX64},
+  {"raw16(raw16)"        , RAWFMT_RAW16_OPT_RAW16},
+  {"raw16(avg16)"        , RAWFMT_RAW16_OPT_AVG16},
+  {"raw24(raw8)"         , RAWFMT_RAW24_OPT_RAW8},
+  {"raw24/raw24"         , RAWFMT_RAW24_DIV_RAW24},
+  {"raw24/raw32"         , RAWFMT_RAW24_DIV_RAW32},
+  {"sec2hour"            , RAWFMT_SEC2HOUR},
+  {"min2hour"            , RAWFMT_MIN2HOUR},
+  {"halfmin2hour"        , RAWFMT_HALFMIN2HOUR},
+  {"msec24hour32"        , RAWFMT_MSEC24_HOUR32},
+  {"tempminmax"          , RAWFMT_TEMPMINMAX},
+  {"temp10x"             , RAWFMT_TEMP10X},
+  {"tempminmaxsigned"    , RAWFMT_TEMPMINMAX_SIGNED},
+  {"tempminmaxoversigned", RAWFMT_TEMPMINMAXOVER_SIGNED},
 };
 
 const unsigned num_format_names = sizeof(format_names)/sizeof(format_names[0]);
@@ -2057,7 +2061,7 @@ std::string ata_format_attr_raw_value(const ata_smart_attribute & attr,
     {
       // Search for possible min/max values
       // 00 HH 00 LL 00 TT (Hitachi/IBM)
-      // 00 00 HH LL 00 TT (Maxtor, Samsung)
+      // 00 00 HH LL 00 TT (Maxtor, Samsung, Toshiba)
       // 00 00 00 HH LL TT (WDC)
       unsigned char lo = 0, hi = 0;
       int cnt = 0;
@@ -2092,6 +2096,56 @@ std::string ata_format_attr_raw_value(const ata_smart_attribute & attr,
     s = strprintf("%d.%d", word[0]/10, word[0]%10);
     break;
 
+  case RAWFMT_TEMPMINMAX_SIGNED:
+    // Temperature
+    {
+      // Search for possible min/max values
+      // 00 LL 00 HH 00 TT (Kingston SSDNow+)
+      // 00 TT TT TT TT TT (WDC Scorpion Blue)
+      char t, lo, hi;
+
+      //In all case raw[0] is current temperature
+      //WDC Scorpion Blue uses 32bits signed value
+      //it's unlikely that the drive will hit -129
+      t = (char)raw[0];
+
+      //Check if we have mandatory 0x00 for SSDNow+ wand also valid information about min/max.
+      //Indistinguishable case is where Kingston SSDNow+ would have a min, max and current temp
+      //of 0. Since there is no min nor max, there is no real point in printing them.
+      if ((raw[1] == 0x00) && (raw[3] == 0x00)
+          && (raw[2] != 0x00) && (raw[4] != 0x00)) {
+        lo = (char)raw[4];
+        hi = (char)raw[2];
+      }
+      else {
+        lo = CHAR_MIN;
+        hi = CHAR_MIN;
+      }
+
+      if (lo == CHAR_MIN && hi == CHAR_MIN)
+        s = strprintf("%d", t);
+      else if (lo <= t && t <= hi)
+        s = strprintf("%d (Min/Max %d/%d)", t, lo, hi);
+      else
+        s = strprintf("%d (%d %d %d %d %d)", t, raw[5], raw[4], raw[3], raw[2], raw[1]);
+    }
+    break;
+
+  case RAWFMT_TEMPMINMAXOVER_SIGNED:
+    // Temperature
+    {
+      // Since zero is a possible value, search algo does
+      // not work here. Only support OO OO HH LL TT TT for now
+      int16_t t = word[0], over = word[2];
+      int8_t hi = raw[3], lo = raw[2];
+
+      if (lo <= (int8_t)t && (int8_t)t <= hi)
+        s = strprintf("%d (Min/Max %d/%d Over Count %d)", t, lo, hi, over);
+      else
+        s = strprintf("%d (%d %d %u)", word[0], raw[2], raw[3], word[2]);
+    }
+    break;
+  
   default:
     s = "?"; // Should not happen
     break;
@@ -2320,33 +2374,61 @@ int ata_find_attr_index(unsigned char id, const ata_smart_values & smartval)
   return -1;
 }
 
-// Return Temperature Attribute raw value selected according to possible
-// non-default interpretations. If the Attribute does not exist, return 0
-unsigned char ata_return_temperature_value(const ata_smart_values * data, const ata_vendor_attr_defs & defs)
+// Return Temperature Attribute value (possibly raw) selected according to possible
+// non-default interpretations.
+// If the Attribute does not exist, return -128 or CHAR_MIN
+char ata_return_temperature_value(const ata_smart_values * data, const ata_vendor_attr_defs & defs)
 {
-  for (int i = 0; i < 4; i++) {
-    static const unsigned char ids[4] = {194, 190, 9, 220};
+  //Removed id 9 & 220: according to drivedb.h, no drive has attribute 9 or 220 with temperature
+  static const unsigned char ids[2] = {194, 190};
+  for (int i = 0; i < 2; i++) {
     unsigned char id = ids[i];
     const ata_attr_raw_format format = defs[id].raw_format;
-    if (!(   ((id == 194 || id == 190) && format == RAWFMT_DEFAULT)
-          || format == RAWFMT_TEMPMINMAX || format == RAWFMT_TEMP10X))
+    if (!( format == RAWFMT_DEFAULT
+          || format == RAWFMT_TEMPMINMAX
+          || format == RAWFMT_TEMP10X
+          || format == RAWFMT_TEMPMINMAX_SIGNED
+          || format == RAWFMT_TEMPMINMAXOVER_SIGNED))
       continue;
     int idx = ata_find_attr_index(id, *data);
     if (idx < 0)
       continue;
     uint64_t raw = ata_get_attr_raw_value(data->vendor_attributes[idx], defs);
-    unsigned temp;
+    char temp;
+    unsigned unsignedTmp;
     // ignore possible min/max values in high words
-    if (format == RAWFMT_TEMP10X) // -v N,temp10x
-      temp = ((unsigned short)raw + 5) / 10;
-    else
-      temp = (unsigned char)raw;
-    if (!(0 < temp && temp < 128))
+    switch(format) {
+    case RAWFMT_TEMP10X:
+      unsignedTmp = ((unsigned short)raw + 5) / 10;
+      if (unsignedTmp > CHAR_MAX)
+        unsignedTmp = CHAR_MAX;
+      temp = (char)unsignedTmp;
+      break;
+
+    case RAWFMT_DEFAULT:
+    case RAWFMT_TEMPMINMAX:
+      unsignedTmp = (unsigned char)raw;
+      if (unsignedTmp > CHAR_MAX)
+        unsignedTmp = CHAR_MAX;
+      temp = (char)unsignedTmp;
+      break;
+
+    case RAWFMT_TEMPMINMAX_SIGNED:
+    case RAWFMT_TEMPMINMAXOVER_SIGNED:
+      temp = (char)(raw & 0x000000ffULL);
+      break;
+
+    default:
+      temp = CHAR_MIN; // Should not happen
+      break;
+    }
+
+    if (CHAR_MIN == temp)
       continue;
     return temp;
   }
   // No valid attribute found
-  return 0;
+  return CHAR_MIN;
 }
 
 

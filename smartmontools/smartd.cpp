@@ -5,6 +5,7 @@
  * Copyright (C) 2000    Michael Cornwell <cornwell@acm.org>
  * Copyright (C) 2008    Oliver Bock <brevilo@users.sourceforge.net>
  * Copyright (C) 2008-13 Christian Franke <smartmontools-support@lists.sourceforge.net>
+ * Copyright (C) 2013 Frederic Nadeau
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -356,7 +357,7 @@ struct mailinfo {
 /// Persistent state data for a device.
 struct persistent_dev_state
 {
-  unsigned char tempmin, tempmax;         // Min/Max Temperatures
+  char tempmin, tempmax;                  // Min/Max Temperatures
 
   unsigned char selflogcount;             // total number of self-test errors
   unsigned short selfloghour;             // lifetime hours of last self-test error
@@ -403,7 +404,7 @@ struct persistent_dev_state
 };
 
 persistent_dev_state::persistent_dev_state()
-: tempmin(0), tempmax(0),
+: tempmin(CHAR_MIN), tempmax(CHAR_MIN),
   selflogcount(0),
   selfloghour(0),
   scheduled_test_next_check(0),
@@ -424,7 +425,7 @@ struct temp_dev_state
   bool not_cap_long;
   bool not_cap_selective;
 
-  unsigned char temperature;              // last recorded Temperature (in Celsius)
+  char temperature;                       // last recorded Temperature (in Celsius)
   time_t tempmin_delay;                   // time where Min Temperature tracking will start
 
   bool powermodefail;                     // true if power mode check failed
@@ -457,7 +458,7 @@ temp_dev_state::temp_dev_state()
   not_cap_short(false),
   not_cap_long(false),
   not_cap_selective(false),
-  temperature(0),
+  temperature(CHAR_MIN),
   tempmin_delay(0),
   powermodefail(false),
   powerskipcnt(0),
@@ -582,9 +583,9 @@ static bool parse_dev_state_line(const char * line, persistent_dev_state & state
 
   int m = 1;
   if (match[++m].rm_so >= 0)
-    state.tempmin = (unsigned char)val;
+    state.tempmin = (char)val;
   else if (match[++m].rm_so >= 0)
-    state.tempmax = (unsigned char)val;
+    state.tempmax = (char)val;
   else if (match[++m].rm_so >= 0)
     state.selflogcount = (unsigned char)val;
   else if (match[++m].rm_so >= 0)
@@ -1920,7 +1921,7 @@ static int ATADeviceScan(dev_config & cfg, dev_state & state, ata_device * atade
       cfg.offl_pending_id = 0;
 
     if (   (cfg.tempdiff || cfg.tempinfo || cfg.tempcrit)
-        && !ata_return_temperature_value(&state.smartval, cfg.attribute_defs)) {
+        && (ata_return_temperature_value(&state.smartval, cfg.attribute_defs) == CHAR_MIN)) {
       PrintOut(LOG_INFO, "Device: %s, can't monitor Temperature, ignoring -W %d,%d,%d\n",
                name, cfg.tempdiff, cfg.tempinfo, cfg.tempcrit);
       cfg.tempdiff = cfg.tempinfo = cfg.tempcrit = 0;
@@ -2819,9 +2820,9 @@ static const char * fmt_temp(unsigned char x, char (& buf)[20])
 }
 
 // Check Temperature limits
-static void CheckTemperature(const dev_config & cfg, dev_state & state, unsigned char currtemp, unsigned char triptemp)
+static void CheckTemperature(const dev_config & cfg, dev_state & state, char currtemp, unsigned char triptemp)
 {
-  if (!(0 < currtemp && currtemp < 255)) {
+  if (CHAR_MIN == currtemp) {
     PrintOut(LOG_INFO, "Device: %s, failed to read Temperature\n", cfg.name.c_str());
     return;
   }
@@ -2829,16 +2830,16 @@ static void CheckTemperature(const dev_config & cfg, dev_state & state, unsigned
   // Update Max Temperature
   const char * minchg = "", * maxchg = "";
   if (currtemp > state.tempmax) {
-    if (state.tempmax)
+    if (CHAR_MIN != state.tempmax)
       maxchg = "!";
     state.tempmax = currtemp;
     state.must_write = true;
   }
 
   char buf[20];
-  if (!state.temperature) {
+  if (CHAR_MIN != state.temperature) {
     // First check
-    if (!state.tempmin || currtemp < state.tempmin)
+    if (CHAR_MIN != state.tempmin || currtemp < state.tempmin)
         // Delay Min Temperature update by ~ 30 minutes.
         state.tempmin_delay = time(0) + CHECKTIME - 60;
     PrintOut(LOG_INFO, "Device: %s, initial Temperature is %d Celsius (Min/Max %s/%u%s)\n",
@@ -2853,8 +2854,8 @@ static void CheckTemperature(const dev_config & cfg, dev_state & state, unsigned
       if (   (state.tempmin && currtemp > state.tempmin) // current temp exceeds recorded min,
           || (state.tempmin_delay <= time(0))) {         // or delay time is over.
         state.tempmin_delay = 0;
-        if (!state.tempmin)
-          state.tempmin = 255;
+        if (CHAR_MIN == state.tempmin)
+          state.tempmin = CHAR_MAX;
       }
     }
 

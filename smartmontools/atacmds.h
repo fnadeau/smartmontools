@@ -6,6 +6,7 @@
  * Copyright (C) 2002-11 Bruce Allen <smartmontools-support@lists.sourceforge.net>
  * Copyright (C) 2008-12 Christian Franke <smartmontools-support@lists.sourceforge.net>
  * Copyright (C) 1999-2000 Michael Cornwell <cornwell@acm.org>
+ * Copyright (C) 2013 Frederic Nadeau
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -679,6 +680,8 @@ enum ata_attr_raw_format
   RAWFMT_MSEC24_HOUR32,
   RAWFMT_TEMPMINMAX,
   RAWFMT_TEMP10X,
+  RAWFMT_TEMPMINMAX_SIGNED,
+  RAWFMT_TEMPMINMAXOVER_SIGNED,
 };
 
 // Attribute flags
@@ -923,9 +926,10 @@ void checksumwarning(const char *string);
 // Find attribute index for attribute id, -1 if not found.
 int ata_find_attr_index(unsigned char id, const ata_smart_values & smartval);
 
-// Return Temperature Attribute raw value selected according to possible
-// non-default interpretations. If the Attribute does not exist, return 0
-unsigned char ata_return_temperature_value(const ata_smart_values * data, const ata_vendor_attr_defs & defs);
+// Return Temperature Attribute value (possibly raw) selected according to possible
+// non-default interpretations.
+// If the Attribute does not exist, return -128 or CHAR_MIN
+char ata_return_temperature_value(const ata_smart_values * data, const ata_vendor_attr_defs & defs);
 
 
 #define MAX_ATTRIBUTE_NUM 256

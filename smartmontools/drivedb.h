@@ -5,6 +5,7 @@
  *
  * Copyright (C) 2003-11 Philip Williams, Bruce Allen
  * Copyright (C) 2008-13 Christian Franke <smartmontools-support@lists.sourceforge.net>
+ * Copyright (C) 2013 Frederic Nadeau
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -268,11 +269,9 @@ const drive_settings builtin_knowndrives[] = {
     "KINGSTON SH10[03]S3(90|120|240|480)G|" // HyperX (3K), SF-2281, tested with
       // SH100S3240G/320ABBF0, SH103S3120G/505ABBF0
     "KINGSTON SKC300S37A(60|120|240|480)G|" // SF-2281, tested with SKC300S37A120G/KC4ABBF0
-    "KINGSTON SVP200S3(7A)?(60|90|120|240|480)G|" // V+ 200, SF-2281, tested with
       // SVP200S37A480G/502ABBF0, SVP200S390G/332ABBF0
     "KINGSTON SMS200S3(30|60|120)G|" // mSATA, SF-2241, tested with SMS200S3120G/KC3ABBF0
     "KINGSTON SMS450S3(32|64|128)G|" // mSATA, SF-2281, tested with SMS450S3128G/503ABBF0
-    "KINGSTON (SV300|SKC100|SE100)S3.*G|" // other SF-2281
     "MKNSSDCR(45|60|90|120|180|240|480)GB(-DX)?|" // Mushkin Chronos (deluxe), SF-2281,
       // tested with MKNSSDCR120GB
     "Mushkin MKNSSDCL(40|60|80|90|115|120|180|240|480)GB-DX2?|" // Mushkin Callisto deluxe,
@@ -328,6 +327,43 @@ const drive_settings builtin_knowndrives[] = {
   //"-v 187,raw48,Reported_Uncorrect "
     "-v 189,tempminmax,Airflow_Temperature_Cel "
   //"-v 194,tempminmax,Temperature_Celsius "
+    "-v 195,raw24/raw32,ECC_Uncorr_Error_Count "
+  //"-v 196,raw16(raw16),Reallocated_Event_Count "
+    "-v 198,raw24/raw32:210zr54,Uncorrectable_Sector_Ct " // KINGSTON SE100S3100G/510ABBF0
+    "-v 199,raw48,SATA_CRC_Error_Count "
+    "-v 201,raw24/raw32,Unc_Soft_Read_Err_Rate "
+    "-v 204,raw24/raw32,Soft_ECC_Correct_Rate "
+    "-v 230,raw48,Life_Curve_Status "
+    "-v 231,raw48,SSD_Life_Left "
+  //"-v 232,raw48,Available_Reservd_Space "
+    "-v 233,raw48,SandForce_Internal "
+    "-v 234,raw48,SandForce_Internal "
+    "-v 235,raw48,SuperCap_Health "
+    "-v 241,raw48,Lifetime_Writes_GiB "
+    "-v 242,raw48,Lifetime_Reads_GiB"
+  },
+  { "Kingston SSDNow with signed temperature. SandForce Driven SSDs",
+    "KINGSTON SVP200S3(7A)?(60|90|120|240|480)G|" // V+ 200, SF-2281, tested with
+      // SVP200S37A480G/502ABBF0, SVP200S390G/332ABBF0
+    "KINGSTON (SV300|SKC100|SE100)S3.*G", // other SF-2281
+    "", "",
+    "-v 1,raw24/raw32,Raw_Read_Error_Rate "
+    "-v 5,raw48,Retired_Block_Count "
+    "-v 9,msec24hour32,Power_On_Hours_and_Msec "
+  //"-v 12,raw48,Power_Cycle_Count "
+    "-v 13,raw24/raw32,Soft_Read_Error_Rate "
+    "-v 100,raw48,Gigabytes_Erased "
+    "-v 170,raw48,Reserve_Block_Count "
+    "-v 171,raw48,Program_Fail_Count "
+    "-v 172,raw48,Erase_Fail_Count "
+    "-v 174,raw48,Unexpect_Power_Loss_Ct "
+    "-v 177,raw48,Wear_Range_Delta "
+    "-v 181,raw48,Program_Fail_Count "
+    "-v 182,raw48,Erase_Fail_Count "
+    "-v 184,raw48,IO_Error_Detect_Code_Ct "
+  //"-v 187,raw48,Reported_Uncorrect "
+  //"-v 189,tempminmax,Airflow_Temperature_Cel "
+    "-v 194,tempminmaxsigned,Temperature_Celsius "
     "-v 195,raw24/raw32,ECC_Uncorr_Error_Count "
   //"-v 196,raw16(raw16),Reallocated_Event_Count "
     "-v 198,raw24/raw32:210zr54,Uncorrectable_Sector_Ct " // KINGSTON SE100S3100G/510ABBF0
@@ -648,7 +684,7 @@ const drive_settings builtin_knowndrives[] = {
     "-v 183,raw48,SATA_Downshift_Count "
   //"-v 184,raw48,End-to-End_Error "
   //"-v 187,raw48,Reported_Uncorrect "
-    "-v 190,tempminmax,Temperature_Case "
+    "-v 190,tempminmaxoversigned,Temperature_Case "
     "-v 192,raw48,Unsafe_Shutdown_Count "
     "-v 194,tempminmax,Temperature_Internal "
   //"-v 197,raw48,Current_Pending_Sector "
@@ -2554,14 +2590,16 @@ const drive_settings builtin_knowndrives[] = {
     "WDC WD(4|6|8|10|12|16|25)00BEAS-.*",
     "", "", ""
   },
-  { "Western Digital Scorpio Blue Serial ATA",
+  { "Western Digital Scorpio Blue Serial ATA", // tested with WDC WD5000BEVT-22ZAT0/01.01A01
     "WDC WD((4|6|8|10|12|16|25)00BEVS|(8|12|16|25|32|40|50|64)00BEVT|7500KEVT|10TEVT)-.*",
-    "", "", ""
+    "", "",
+    "-v 194,tempminmaxsigned,Temperature_Celsius " // tested in climat chamber
   },
   { "Western Digital Scorpio Blue Serial ATA (AF)", // tested with
       // WDC WD10JPVT-00A1YT0/01.01A01
     "WDC WD((16|25|32|50|64|75)00BPVT|10[JT]PVT)-.*",
-    "", "", ""
+    "", "",
+    "-v 194,tempminmaxsigned,Temperature_Celsius " // tested in climat chamber
   },
   { "Western Digital Scorpio Black", // tested with WDC WD5000BEKT-00KA9T0/01.01A01
     "WDC WD(8|12|16|25|32|50)00B[EJ]KT-.*",
