@@ -11,4 +11,7 @@ While I totally agree with the idea that *if we do not know how to threat the va
 an interpretation.* On the other hand, there are cases where we know how to interprete the data
 and those cases should not suffer from the lack of vendor's documentations.
 
+*Daemon smartd has not been tested. You've been warned!*
+*update-smart-drivedb.in is broken. Do not use it with this release.*
+
   [1]: http://sourceforge.net/apps/trac/smartmontools/ticket/42 "Subzero temperature"
