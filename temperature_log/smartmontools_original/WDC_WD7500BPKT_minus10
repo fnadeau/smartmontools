@@ -1,0 +1,28 @@
+smartctl 6.1 2013-03-16 r3800 [x86_64-linux-3.10.9-200.fc19.x86_64] (local build)
+Copyright (C) 2002-13, Bruce Allen, Christian Franke, www.smartmontools.org
+
+SMART Attributes Data Structure revision number: 16
+Vendor Specific SMART Attributes with Thresholds:
+ID# ATTRIBUTE_NAME          FLAG     VALUE WORST THRESH TYPE      UPDATED  WHEN_FAILED RAW_VALUE
+  1 Raw_Read_Error_Rate     0x002f   200   200   051    Pre-fail  Always       -       0
+  3 Spin_Up_Time            0x0027   100   253   021    Pre-fail  Always       -       0
+  4 Start_Stop_Count        0x0032   100   100   000    Old_age   Always       -       5
+  5 Reallocated_Sector_Ct   0x0033   200   200   140    Pre-fail  Always       -       0
+  7 Seek_Error_Rate         0x002e   200   200   000    Old_age   Always       -       0
+  9 Power_On_Hours          0x0032   100   100   000    Old_age   Always       -       21
+ 10 Spin_Retry_Count        0x0032   100   253   000    Old_age   Always       -       0
+ 11 Calibration_Retry_Count 0x0032   100   253   000    Old_age   Always       -       0
+ 12 Power_Cycle_Count       0x0032   100   100   000    Old_age   Always       -       5
+191 G-Sense_Error_Rate      0x0032   100   100   000    Old_age   Always       -       0
+192 Power-Off_Retract_Count 0x0032   200   200   000    Old_age   Always       -       3
+193 Load_Cycle_Count        0x0032   200   200   000    Old_age   Always       -       7
+194 Temperature_Celsius     0x0022   155   096   000    Old_age   Always       -       248 (0 0 255 255 255)
+196 Reallocated_Event_Count 0x0032   200   200   000    Old_age   Always       -       0
+197 Current_Pending_Sector  0x0032   200   200   000    Old_age   Always       -       0
+198 Offline_Uncorrectable   0x0030   100   253   000    Old_age   Offline      -       0
+199 UDMA_CRC_Error_Count    0x0032   200   200   000    Old_age   Always       -       0
+200 Multi_Zone_Error_Rate   0x0008   100   253   000    Old_age   Offline      -       0
+240 Head_Flying_Hours       0x0032   100   100   000    Old_age   Always       -       21
+241 Total_LBAs_Written      0x0032   200   200   000    Old_age   Always       -       222678376
+242 Total_LBAs_Read         0x0032   200   200   000    Old_age   Always       -       209735560
+254 Free_Fall_Sensor        0x0032   200   200   000    Old_age   Always       -       0

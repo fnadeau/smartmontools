@@ -1,0 +1,56 @@
+
+----------------------------------------------------------------------------------------------------
+INTEL SSD S3700
+Datasheet: http://www.intel.com/content/dam/www/public/us/en/documents/product-specifications/ssd-dc-s3700-spec.pdf
+           June 2013
+           Order number: 328171-006US
+
+Temperature sensors range from -20C to 80C.
+
+Smart attribute 190 - 0xBE
+
+Temperature - Airflow Temperature (Case)
+Raw value: reports SSD case temperature statistics
+Bytes 0-1: Current case temperature, Celsius
+Byte 2: Recent min case temperature, Celsius
+Byte 3: Recent max case temperature, Celsius
+Bytes 4-5: Over temperature counter. Number of times
+
+Smart attribure 194 - 0xC2
+
+Temperature - Device Internal Temperature
+Raw value: Reports internal temperature of the SSD in
+degrees Celsius. Temperature reading is the value direct
+from the printed circuit board (PCB) sensor without offset
+
+----------------------------------------------------------------------------------------------------
+Kingston SSDNow
+Datasheet: http://media.kingston.com/support/downloads/MKP_306_SMART_attribute.pdf
+           Datasheet does not have revision information
+           Last seen: 2013-08-23
+
+Smart attribure 194 - 0xC2
+
+[1-0]: Current temperature (C; from sensor)
+[3-2]: Highest temperature (C; lifetime max)
+[5-4]: Lowest temperature (C; lifetime min)
+[6]: None (0x00)
+
+Datasheet also says that temperature range between -127 and 127.
+Experimentation showed that is really only 8 bit encoded, giving:
+[0] : Current temperature (C; from sensor)
+[1] : Always zero
+[2] : Highest temperature (C; lifetime max)
+[3] : Always zero
+[4] : Lowest temperature (C; lifetime min)
+[5] : Always zero
+
+----------------------------------------------------------------------------------------------------
+Western Digital Scorpion Blue/Black
+Datasheet: None found
+
+From experimentation
+
+Smart attribure 194 - 0xC2
+
+[3-0]: Current temperature, Celsius
