@@ -15,6 +15,7 @@ As part of an embedded project that is required to run in a wide temperature ran
 was modified to provide correct information on temperature.
 
 *Daemon smartd has not been tested. You've been warned!*
+
 *update-smart-drivedb.in is broken. Do not use it with this release.*
 
 Ouput example (some lines were removed)
