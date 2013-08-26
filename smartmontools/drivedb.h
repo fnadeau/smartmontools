@@ -2607,7 +2607,8 @@ const drive_settings builtin_knowndrives[] = {
   },
   { "Western Digital Scorpio Black (AF)",
     "WDC WD(50|75)00BPKT-.*",
-    "", "", ""
+    "", "",
+    "-v 194,tempminmaxsigned,Temperature_Celsius " // tested in climat chamber
   },
   { "Western Digital Red (AF)", // tested with WDC WD10EFRX-68JCSN0/01.01A01
     "WDC WD(10|20|30)EFRX-.*",
